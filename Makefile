@@ -80,33 +80,48 @@ docker-logs:
 	docker logs -f $(CONTAINER_NAME)
 
 # ============= DEPLOYMENT COMMANDS =============
-deploy: docker-build
+deploy:
 	@echo "$(GREEN)📦 Preparing deployment...$(NC)"
 	@echo "$(YELLOW)Server: $(SERVER_IP):$(SERVER_PORT)$(NC)"
 	@echo "$(YELLOW)User: $(SERVER_USER)$(NC)"
 	
-	@echo "$(GREEN)📤 Uploading Dockerfile and scripts...$(NC)"
-	scp -P $(SERVER_PORT) Dockerfile $(SERVER_USER)@$(SERVER_IP):/root/dictionary-mrvu/
-	scp -P $(SERVER_PORT) docker-compose.yml $(SERVER_USER)@$(SERVER_IP):/root/dictionary-mrvu/ || echo "docker-compose.yml not found, skipping..."
+	@echo "$(GREEN)📤 Uploading source code via git...$(NC)"
+	ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP) \
+		"cd /root/dictionary-mrvu && git pull origin main || git clone https://github.com/khaicafe/dictionary-mrvu.git ."
 	
-	@echo "$(GREEN)🐳 Building image on server...$(NC)"
+	@echo "$(GREEN)⚙️  Setting environment variables...$(NC)"
 	ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP) \
 		"cd /root/dictionary-mrvu && \
-		docker build -t $(IMAGE_NAME):$(IMAGE_TAG) . && \
-		echo '$(GREEN)✅ Image built on server$(NC)'"
+		if [ ! -f .env.production ]; then \
+			cp .env.example .env.production; \
+			echo '⚠️  Created .env.production - please update ADMIN_PASSWORD'; \
+		fi"
 	
-	@echo "$(GREEN)🚀 Stopping old container and starting new one...$(NC)"
+	@echo "$(GREEN)🐳 Building Docker image on server...$(NC)"
+	ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP) \
+		"cd /root/dictionary-mrvu && \
+		docker build -t $(IMAGE_NAME):$(IMAGE_TAG) ."
+	
+	@echo "$(GREEN)🚀 Stopping old container...$(NC)"
 	ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP) \
 		"docker stop $(CONTAINER_NAME) || true; \
-		docker rm $(CONTAINER_NAME) || true; \
+		docker rm $(CONTAINER_NAME) || true"
+	
+	@echo "$(GREEN)🚀 Starting new container...$(NC)"
+	ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP) \
+		"cd /root/dictionary-mrvu && \
 		docker run -d \
 			--name $(CONTAINER_NAME) \
 			-p $(SERVER_PORT_APP):3000 \
 			--restart unless-stopped \
+			-v /root/dictionary-mrvu/data:/app/data \
+			--env-file .env.production \
 			$(IMAGE_NAME):$(IMAGE_TAG)"
 	
 	@echo "$(GREEN)✅ Deployment complete!$(NC)"
 	@echo "$(GREEN)🌐 App running on http://$(SERVER_IP):$(SERVER_PORT_APP)$(NC)"
+	@echo "$(YELLOW)⚠️  First time? SSH to server and set ADMIN_PASSWORD in .env.production$(NC)"
+	@echo "$(YELLOW)   Then run: ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP)$(NC)"
 
 deploy-prod: docker-build
 	@echo "$(RED)⚠️  PRODUCTION DEPLOYMENT$(NC)"
