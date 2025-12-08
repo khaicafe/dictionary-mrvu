@@ -106,7 +106,7 @@ deploy:
 	@echo "$(YELLOW)Stopping old container if exists...$(NC)"
 	$(SSH_CMD) "docker stop $(CONTAINER_NAME) || true && docker rm $(CONTAINER_NAME) || true"
 	@echo "$(YELLOW)Starting new container...$(NC)"
-	$(SSH_CMD) "docker run -d --name $(CONTAINER_NAME) -p $(SERVER_PORT_APP):3000 -v /root/dictionary-mrvu/data:/app/data -v /root/dictionary-mrvu/.env.production.local:/app/.env.production.local -e ADMIN_PASSWORD=admin123 -e NODE_ENV=production --restart unless-stopped $(IMAGE_NAME):$(IMAGE_TAG)"
+	$(SSH_CMD) "docker run -d --name $(CONTAINER_NAME) -p $(SERVER_PORT_APP):3000 -v /root/dictionary-mrvu/data:/app/data -v /root/dictionary-mrvu/.env.production.local:/app/.env.production.local -e ADMIN_PASSWORD=admin123 -e NODE_ENV=production -e NEXT_PUBLIC_API_URL=http://$(SERVER_IP) --restart unless-stopped $(IMAGE_NAME):$(IMAGE_TAG)"
 	@echo "$(GREEN)Deployment complete!$(NC)"
 	@echo "$(GREEN)App running on http://$(SERVER_IP):$(SERVER_PORT_APP)$(NC)"
 

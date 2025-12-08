@@ -167,8 +167,9 @@ export default function AdminPage() {
   const handleLogout = async () => {
     // Call logout endpoint to clear cookie
     await fetch('/api/auth/logout');
-    // Redirect to home
-    router.push('/');
+    // Redirect to home using current origin (preserves protocol, hostname, port)
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    window.location.href = baseUrl + '/';
   };
 
   return (
