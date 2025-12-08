@@ -4,7 +4,7 @@
 SERVER_IP = 103.56.162.100
 SERVER_PORT = 24700
 SERVER_USER = root
-SERVER_PASS = _GHKpxi#Gmp4E8elT34o
+SERVER_PASS = '_GHKpxi#Gmp4E8elT34o'
 IMAGE_NAME = dictionary-mrvu
 IMAGE_TAG = latest
 CONTAINER_NAME = dictionary-mrvu-app
@@ -12,8 +12,8 @@ APP_PORT = 3000
 SERVER_PORT_APP = 80
 
 # SSH with password (using sshpass)
-SSH_CMD = sshpass -p "$(SERVER_PASS)" ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP)
-RSYNC_CMD = sshpass -p "$(SERVER_PASS)" rsync -avz -e "ssh -p $(SERVER_PORT)"
+SSH_CMD = sshpass -p $(SERVER_PASS) ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP)
+RSYNC_CMD = sshpass -p $(SERVER_PASS) rsync -avz -e "ssh -p $(SERVER_PORT)"
 
 # Colors
 RED = \033[0;31m
