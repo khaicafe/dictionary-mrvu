@@ -51,10 +51,10 @@ clean:
 	@echo "$(GREEN)Clean complete$(NC)"
 
 docker-build: clean
-	@echo "$(GREEN)Building Docker image: $(IMAGE_NAME):$(IMAGE_TAG)$(NC)"
-	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) .
-	docker tag $(IMAGE_NAME):$(IMAGE_TAG) $(IMAGE_NAME):latest
-	@echo "$(GREEN)Docker image built$(NC)"
+# 	@echo "$(GREEN)Building Docker image: $(IMAGE_NAME):$(IMAGE_TAG)$(NC)"
+# 	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) .
+# 	docker tag $(IMAGE_NAME):$(IMAGE_TAG) $(IMAGE_NAME):latest
+# 	@echo "$(GREEN)Docker image built$(NC)"
 
 docker-run: docker-build
 	@echo "$(GREEN)Running Docker container...$(NC)"
