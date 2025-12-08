@@ -3,9 +3,6 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install yarn
-RUN npm install -g yarn
-
 # Copy package files
 COPY package.json yarn.lock* package-lock.json* ./
 
@@ -23,8 +20,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dumb-init and yarn for proper signal handling
-RUN apk add --no-cache dumb-init && npm install -g yarn
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
 
 # Copy package files
 COPY package.json yarn.lock* package-lock.json* ./

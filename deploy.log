@@ -1,0 +1,75 @@
+[0;33mCleaning up...[0m
+rm -rf .next dist build .yarn/cache
+[0;32mClean complete[0m
+[0;32mBuilding Docker image: dictionary-mrvu:latest[0m
+docker build -t dictionary-mrvu:latest .
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.45kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:20-alpine
+#2 DONE 0.4s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 272B done
+#3 DONE 0.0s
+
+#4 [builder 1/7] FROM docker.io/library/node:20-alpine@sha256:643e7036aa985317ebfee460005e322aa550c6b6883000d01daefb58689a58e2
+#4 resolve docker.io/library/node:20-alpine@sha256:643e7036aa985317ebfee460005e322aa550c6b6883000d01daefb58689a58e2 0.0s done
+#4 DONE 0.1s
+
+#5 [builder 2/7] WORKDIR /app
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 3.54kB 0.0s done
+#6 DONE 0.0s
+
+#7 [stage-1  3/11] RUN apk add --no-cache dumb-init && npm install -g yarn
+#7 1.886 (1/1) Installing dumb-init (1.2.5-r3)
+#7 1.951 Executing busybox-1.37.0-r29.trigger
+#7 1.971 OK: 10 MiB in 19 packages
+#7 ...
+
+#8 [builder 3/7] RUN npm install -g yarn
+#8 2.181 npm error code EEXIST
+#8 2.182 npm error path /usr/local/bin/yarn
+#8 2.182 npm error EEXIST: file already exists
+#8 2.182 npm error File exists: /usr/local/bin/yarn
+#8 2.183 npm error Remove the existing file and try again, or run npm
+#8 2.183 npm error with --force to overwrite files recklessly.
+#8 2.189 npm notice
+#8 2.189 npm notice New major version of npm available! 10.8.2 -> 11.6.4
+#8 2.189 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.4
+#8 2.189 npm notice To update run: npm install -g npm@11.6.4
+#8 2.189 npm notice
+#8 2.189 npm error A complete log of this run can be found in: /root/.npm/_logs/2025-12-08T14_52_31_234Z-debug-0.log
+#8 ERROR: process "/bin/sh -c npm install -g yarn" did not complete successfully: exit code: 1
+
+#7 [stage-1  3/11] RUN apk add --no-cache dumb-init && npm install -g yarn
+#7 CANCELED
+------
+ > [builder 3/7] RUN npm install -g yarn:
+2.182 npm error EEXIST: file already exists
+2.182 npm error File exists: /usr/local/bin/yarn
+2.183 npm error Remove the existing file and try again, or run npm
+2.183 npm error with --force to overwrite files recklessly.
+2.189 npm notice
+2.189 npm notice New major version of npm available! 10.8.2 -> 11.6.4
+2.189 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.4
+2.189 npm notice To update run: npm install -g npm@11.6.4
+2.189 npm notice
+2.189 npm error A complete log of this run can be found in: /root/.npm/_logs/2025-12-08T14_52_31_234Z-debug-0.log
+------
+Dockerfile:7
+--------------------
+   5 |     
+   6 |     # Install yarn
+   7 | >>> RUN npm install -g yarn
+   8 |     
+   9 |     # Copy package files
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm install -g yarn" did not complete successfully: exit code: 1
+make: *** [docker-build] Error 1
