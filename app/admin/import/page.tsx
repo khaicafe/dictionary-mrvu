@@ -1,7 +1,7 @@
 'use client';
 
 import React, {useState, useEffect, useRef} from 'react';
-import { useRouter } from 'next/navigation';
+import {useRouter} from 'next/navigation';
 
 export default function AdminPage() {
   // File input ref
@@ -188,8 +188,7 @@ export default function AdminPage() {
           </div>
           <button
             onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition"
-          >
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition">
             🚪 Logout
           </button>
         </div>

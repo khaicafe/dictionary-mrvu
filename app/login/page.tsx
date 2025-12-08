@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import {useState} from 'react';
+import {useRouter} from 'next/navigation';
 
 export default function LoginPage() {
   const [password, setPassword] = useState('');
@@ -17,8 +17,8 @@ export default function LoginPage() {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({password}),
       });
 
       const data = await response.json();
@@ -44,7 +44,9 @@ export default function LoginPage() {
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">🔐 Admin Login</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            🔐 Admin Login
+          </h1>
           <p className="text-gray-600">Enter password to access admin panel</p>
         </div>
 
@@ -72,8 +74,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg transition"
-          >
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg transition">
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>

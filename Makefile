@@ -80,27 +80,35 @@ docker-logs:
 	docker logs -f $(CONTAINER_NAME)
 
 # ============= DEPLOYMENT COMMANDS =============
-deploy:
+deploy: docker-build
 	@echo "$(GREEN)📦 Preparing deployment...$(NC)"
 	@echo "$(YELLOW)Server: $(SERVER_IP):$(SERVER_PORT)$(NC)"
 	@echo "$(YELLOW)User: $(SERVER_USER)$(NC)"
 	
-	@echo "$(GREEN)📤 Uploading source code via git...$(NC)"
+	@echo "$(GREEN)� Creating app directory on server...$(NC)"
 	ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP) \
-		"cd /root/dictionary-mrvu && git pull origin main || git clone https://github.com/khaicafe/dictionary-mrvu.git ."
+		"mkdir -p /root/dictionary-mrvu"
 	
-	@echo "$(GREEN)⚙️  Setting environment variables...$(NC)"
-	ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP) \
-		"cd /root/dictionary-mrvu && \
-		if [ ! -f .env.production ]; then \
-			cp .env.example .env.production; \
-			echo '⚠️  Created .env.production - please update ADMIN_PASSWORD'; \
-		fi"
+	@echo "$(GREEN)📤 Uploading source code via rsync...$(NC)"
+	rsync -avz -e "ssh -p $(SERVER_PORT)" \
+		--exclude='.git' \
+		--exclude='node_modules' \
+		--exclude='.next' \
+		--exclude='dist' \
+		--exclude='build' \
+		--exclude='.env.local' \
+		--exclude='data/dictionary.db' \
+		--exclude='data/dictionary.db-shm' \
+		--exclude='data/dictionary.db-wal' \
+		--exclude='*.log' \
+		./ $(SERVER_USER)@$(SERVER_IP):/root/dictionary-mrvu/
 	
 	@echo "$(GREEN)🐳 Building Docker image on server...$(NC)"
 	ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP) \
 		"cd /root/dictionary-mrvu && \
-		docker build -t $(IMAGE_NAME):$(IMAGE_TAG) ."
+		docker build -t $(IMAGE_NAME):$(IMAGE_TAG) . && \
+		docker tag $(IMAGE_NAME):$(IMAGE_TAG) $(IMAGE_NAME):latest && \
+		echo '$(GREEN)✅ Image built successfully$(NC)'"
 	
 	@echo "$(GREEN)🚀 Stopping old container...$(NC)"
 	ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP) \
@@ -109,19 +117,17 @@ deploy:
 	
 	@echo "$(GREEN)🚀 Starting new container...$(NC)"
 	ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP) \
-		"cd /root/dictionary-mrvu && \
-		docker run -d \
+		"docker run -d \
 			--name $(CONTAINER_NAME) \
 			-p $(SERVER_PORT_APP):3000 \
-			--restart unless-stopped \
 			-v /root/dictionary-mrvu/data:/app/data \
-			--env-file .env.production \
+			-e ADMIN_PASSWORD=admin123 \
+			--restart unless-stopped \
 			$(IMAGE_NAME):$(IMAGE_TAG)"
 	
 	@echo "$(GREEN)✅ Deployment complete!$(NC)"
 	@echo "$(GREEN)🌐 App running on http://$(SERVER_IP):$(SERVER_PORT_APP)$(NC)"
-	@echo "$(YELLOW)⚠️  First time? SSH to server and set ADMIN_PASSWORD in .env.production$(NC)"
-	@echo "$(YELLOW)   Then run: ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP)$(NC)"
+	@echo "$(YELLOW)📊 Check logs: make server-logs$(NC)"
 
 deploy-prod: docker-build
 	@echo "$(RED)⚠️  PRODUCTION DEPLOYMENT$(NC)"
