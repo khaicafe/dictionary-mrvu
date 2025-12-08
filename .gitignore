@@ -34,7 +34,10 @@ yarn-error.log*
 .env*
 *.db**
 *.xls
-
+*.tar
+*.log
+*.dump
+deploy
 # vercel
 .vercel
 
