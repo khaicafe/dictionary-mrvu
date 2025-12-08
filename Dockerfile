@@ -12,8 +12,8 @@ RUN npm ci || npm install
 # Copy source code
 COPY . .
 
-# Build the Next.js app
-RUN npm run build
+# Build the Next.js app with increased memory
+RUN NODE_OPTIONS=--max_old_space_size=2048 npm run build
 
 # Production stage
 FROM node:20-alpine
@@ -34,8 +34,8 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
 
-# Copy data directory (dictionary database)
-COPY data ./data 2>/dev/null || true
+# Create data directory (will be mounted as volume with database)
+RUN mkdir -p /app/data
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
