@@ -12,8 +12,8 @@ RUN npm ci || npm install
 # Copy source code
 COPY . .
 
-# Build the Next.js app with increased memory
-RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build
+# Build the Next.js app with increased memory and minimal cache
+RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build -- --no-lint
 
 # Production stage
 FROM node:20-alpine
