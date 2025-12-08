@@ -1,10 +1,12 @@
 'use client';
 
 import React, {useState, useEffect, useRef} from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function AdminPage() {
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   // Tab state
   const [activeTab, setActiveTab] = useState<'upload' | 'search'>('upload');
@@ -162,19 +164,34 @@ export default function AdminPage() {
     setSearchResults([]);
   };
 
+  const handleLogout = async () => {
+    // Call logout endpoint to clear cookie
+    await fetch('/api/auth/logout');
+    // Redirect to home
+    router.push('/');
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100">
       <div className="container mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            📚 Quản Lý Từ Điển
-          </h1>
-          <p className="text-lg text-gray-600">
-            {statsData
-              ? `${statsData.totalWords} từ trong cơ sở dữ liệu`
-              : 'Đang tải...'}
-          </p>
+        {/* Header with Logout */}
+        <div className="flex justify-between items-start mb-8">
+          <div className="text-center flex-1">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              📚 Quản Lý Từ Điển
+            </h1>
+            <p className="text-lg text-gray-600">
+              {statsData
+                ? `${statsData.totalWords} từ trong cơ sở dữ liệu`
+                : 'Đang tải...'}
+            </p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition"
+          >
+            🚪 Logout
+          </button>
         </div>
 
         <div className="max-w-4xl mx-auto">
