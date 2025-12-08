@@ -11,7 +11,7 @@ CONTAINER_NAME = dictionary-mrvu-app
 APP_PORT = 3000
 SERVER_PORT_APP = 80
 
-# SSH with password (using sshpass)
+# SSH with password (using sshpass) - escape special chars properly
 SSH_CMD = sshpass -p "_GHKpxi\#Gmp4E8elT34o" ssh -p $(SERVER_PORT) $(SERVER_USER)@$(SERVER_IP)
 RSYNC_CMD = sshpass -p "_GHKpxi\#Gmp4E8elT34o" rsync -avz -e "ssh -p $(SERVER_PORT)"
 
@@ -22,10 +22,10 @@ YELLOW = \033[0;33m
 NC = \033[0m
 
 help:
-	@echo "$(GREEN)Dictionary MRVU - Makefile Commands (Yarn)$(NC)"
+	@echo "$(GREEN)Dictionary MRVU - Makefile Commands$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Build Commands:$(NC)"
-	@echo "  make build              - Build Next.js app with yarn"
+	@echo "  make build              - Build Next.js app"
 	@echo "  make clean              - Clean build files"
 	@echo ""
 	@echo "$(YELLOW)Docker Commands:$(NC)"
@@ -42,12 +42,12 @@ help:
 	@echo "  make server-restart     - Restart app"
 
 build:
-	@echo "$(GREEN)Building Next.js app with yarn...$(NC)"
-	yarn build
+	@echo "$(GREEN)Building Next.js app...$(NC)"
+	npm run build
 
 clean:
 	@echo "$(YELLOW)Cleaning up...$(NC)"
-	rm -rf .next dist build .yarn/cache
+	rm -rf .next dist build
 	@echo "$(GREEN)Clean complete$(NC)"
 
 docker-build: clean
@@ -86,7 +86,6 @@ deploy: docker-build
 		--exclude='.next' \
 		--exclude='dist' \
 		--exclude='build' \
-		--exclude='.yarn' \
 		--exclude='.env.local' \
 		--exclude='data/dictionary.db*' \
 		--exclude='*.log' \

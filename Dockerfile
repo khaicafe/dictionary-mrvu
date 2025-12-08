@@ -3,31 +3,34 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install yarn
+RUN npm install -g yarn
+
 # Copy package files
 COPY package.json yarn.lock* package-lock.json* ./
 
-# Install dependencies (prefer npm to avoid lock file conflicts)
-RUN npm ci || npm install
+# Install dependencies with yarn
+RUN yarn install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
-# Build the Next.js app with increased memory and minimal cache
-RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build -- --no-lint
+# Build the Next.js app with increased memory
+RUN NODE_OPTIONS=--max_old_space_size=4096 yarn build
 
 # Production stage
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init and yarn for proper signal handling
+RUN apk add --no-cache dumb-init && npm install -g yarn
 
 # Copy package files
 COPY package.json yarn.lock* package-lock.json* ./
 
-# Install only production dependencies
-RUN npm ci --omit=dev || npm install --production
+# Install only production dependencies with yarn
+RUN yarn install --frozen-lockfile --production
 
 # Copy built app from builder
 COPY --from=builder /app/.next ./.next
