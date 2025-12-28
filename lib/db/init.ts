@@ -31,6 +31,21 @@ export function initDatabase(): Database.Database {
 
     CREATE INDEX IF NOT EXISTS idx_original ON words(original);
     CREATE INDEX IF NOT EXISTS idx_original_lower ON words(lower(original));
+
+    -- Bảng nhiếp
+    CREATE TABLE IF NOT EXISTS nhiep (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phap TEXT NOT NULL UNIQUE,
+      tang TEXT,
+      tanh_tuong TEXT,
+      phan_loai TEXT,
+      full_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_nhiep_phap_lower ON nhiep(lower(phap));
+    CREATE INDEX IF NOT EXISTS idx_nhiep_tang_lower ON nhiep(lower(tang));
   `);
 
   return db;

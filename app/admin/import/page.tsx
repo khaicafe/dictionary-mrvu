@@ -14,6 +14,9 @@ export default function AdminPage() {
   // Upload state
   const [file, setFile] = useState<File | null>(null);
   const [replaceMode, setReplaceMode] = useState(false);
+  const [importTarget, setImportTarget] = useState<'dictionary' | 'nhiep'>(
+    'dictionary',
+  );
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -29,17 +32,21 @@ export default function AdminPage() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const response = await fetch('/api/dictionary/stats');
+        const endpoint =
+          importTarget === 'dictionary'
+            ? '/api/dictionary/stats'
+            : '/api/nhiep/import';
+        const response = await fetch(endpoint);
         const data = await response.json();
         if (data.success) {
-          setStatsData(data.data);
+          setStatsData(data.data || data.stats);
         }
       } catch (err) {
         console.error('Failed to load stats:', err);
       }
     };
     loadStats();
-  }, [activeTab]);
+  }, [activeTab, importTarget]);
 
   // ============ UPLOAD HANDLERS ============
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,7 +106,12 @@ export default function AdminPage() {
       formData.append('file', file);
       formData.append('replace', replaceMode.toString());
 
-      const res = await fetch('/api/dictionary/import', {
+      const endpoint =
+        importTarget === 'dictionary'
+          ? '/api/dictionary/import'
+          : '/api/nhiep/import';
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       });
@@ -112,10 +124,14 @@ export default function AdminPage() {
         setFile(null);
         // Reload stats after import
         setTimeout(async () => {
-          const response = await fetch('/api/dictionary/stats');
+          const statsEndpoint =
+            importTarget === 'dictionary'
+              ? '/api/dictionary/stats'
+              : '/api/nhiep/import';
+          const response = await fetch(statsEndpoint);
           const statsData = await response.json();
           if (statsData.success) {
-            setStatsData(statsData.data);
+            setStatsData(statsData.data || statsData.stats);
           }
         }, 500);
       } else {
@@ -183,7 +199,11 @@ export default function AdminPage() {
             </h1>
             <p className="text-lg text-gray-600">
               {statsData
-                ? `${statsData.totalWords} từ trong cơ sở dữ liệu`
+                ? `${
+                    statsData.totalWords || statsData.total || 0
+                  } từ trong cơ sở dữ liệu ${
+                    importTarget === 'nhiep' ? '(Nhiếp)' : ''
+                  }`
                 : 'Đang tải...'}
             </p>
           </div>
@@ -221,10 +241,48 @@ export default function AdminPage() {
           {activeTab === 'upload' && (
             <div className="bg-white rounded-xl shadow-lg p-8">
               <form onSubmit={handleImport} className="space-y-6">
+                {/* Dataset selection */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setImportTarget('dictionary')}
+                    className={`p-4 rounded-lg border-2 transition text-left ${
+                      importTarget === 'dictionary'
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 bg-white'
+                    }`}>
+                    <div className="font-semibold text-gray-900">
+                      📚 Từ điển chính
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Import file từ điển hiện tại
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImportTarget('nhiep')}
+                    className={`p-4 rounded-lg border-2 transition text-left ${
+                      importTarget === 'nhiep'
+                        ? 'border-purple-600 bg-purple-50'
+                        : 'border-gray-200 bg-white'
+                    }`}>
+                    <div className="font-semibold text-gray-900">
+                      📒 Nhiếp (Pháp - Tạng)
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Import từ file nhiếp_final.xlsx
+                    </div>
+                  </button>
+                </div>
+
                 {/* File Input */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    📁 Chọn file Excel
+                    📁 Chọn file Excel (
+                    {importTarget === 'nhiep'
+                      ? 'nhiếp_final.xlsx'
+                      : 'dictionary.xlsx'}
+                    )
                   </label>
                   <div
                     className="relative border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-blue-500 transition cursor-pointer"
@@ -357,37 +415,79 @@ export default function AdminPage() {
               {/* Instructions */}
               <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
                 <h3 className="font-semibold text-blue-900 mb-3">
-                  📋 Định dạng Excel
+                  📋 Định dạng Excel {importTarget === 'nhiep' ? '(Nhiếp)' : ''}
                 </h3>
-                <p className="text-sm text-blue-800 mb-3">
-                  File Excel phải chứa các cột (tối thiểu cột 1):
-                </p>
-                <div className="bg-white rounded p-4 text-sm text-gray-700 font-mono border border-blue-200 overflow-x-auto">
-                  <div className="grid grid-cols-3 gap-8">
-                    <div>
-                      <div className="text-blue-600 font-bold">
-                        Cột B (original)
+                {importTarget === 'dictionary' ? (
+                  <>
+                    <p className="text-sm text-blue-800 mb-3">
+                      File Excel phải chứa các cột (tối thiểu cột 1):
+                    </p>
+                    <div className="bg-white rounded p-4 text-sm text-gray-700 font-mono border border-blue-200 overflow-x-auto">
+                      <div className="grid grid-cols-3 gap-8">
+                        <div>
+                          <div className="text-blue-600 font-bold">
+                            Cột B (original)
+                          </div>
+                          <div className="text-xs mt-1">Từ gốc</div>
+                        </div>
+                        <div>
+                          <div className="text-blue-600 font-bold">
+                            Cột C (ndict)
+                          </div>
+                          <div className="text-xs mt-1">Định nghĩa</div>
+                        </div>
+                        <div>
+                          <div className="text-blue-600 font-bold">
+                            Cột E (phat_hc)
+                          </div>
+                          <div className="text-xs mt-1">Phát âm</div>
+                        </div>
                       </div>
-                      <div className="text-xs mt-1">Từ gốc</div>
                     </div>
-                    <div>
-                      <div className="text-blue-600 font-bold">
-                        Cột C (ndict)
+                    <p className="text-xs text-blue-700 mt-3">
+                      💡 Cột B là bắt buộc. Các cột khác tùy chọn. Toàn bộ dòng
+                      được lưu trong full_data.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-blue-800 mb-3">
+                      File nhiếp_final.xlsx cần các cột:
+                    </p>
+                    <div className="bg-white rounded p-4 text-sm text-gray-700 font-mono border border-purple-200 overflow-x-auto">
+                      <div className="grid grid-cols-4 gap-6">
+                        <div>
+                          <div className="text-purple-700 font-bold">
+                            Cột A - Pháp
+                          </div>
+                          <div className="text-xs mt-1">
+                            Từ tiếng Việt / Pháp
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-purple-700 font-bold">
+                            Cột B - Tạng
+                          </div>
+                          <div className="text-xs mt-1">Tạng (Uchen/Wylie)</div>
+                        </div>
+                        <div>
+                          <div className="text-purple-700 font-bold">
+                            Cột C - Tánh tướng
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-purple-700 font-bold">
+                            Cột D - Phân loại
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs mt-1">Định nghĩa</div>
                     </div>
-                    <div>
-                      <div className="text-blue-600 font-bold">
-                        Cột E (phat_hc)
-                      </div>
-                      <div className="text-xs mt-1">Phát âm</div>
-                    </div>
-                  </div>
-                </div>
-                <p className="text-xs text-blue-700 mt-3">
-                  💡 Cột B là bắt buộc. Các cột khác tùy chọn. Toàn bộ dòng được
-                  lưu trong full_data.
-                </p>
+                    <p className="text-xs text-purple-700 mt-3">
+                      💡 Bắt buộc phải có ít nhất cột Pháp hoặc Tạng. Các cột
+                      khác tùy chọn.
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -515,7 +615,8 @@ export default function AdminPage() {
                     🔍 Nhập từ để tìm kiếm
                   </p>
                   <p className="text-sm mt-2">
-                    Hiện có {statsData?.totalWords || 0} từ trong cơ sở dữ liệu
+                    Hiện có {statsData?.totalWords || statsData?.total || 0} từ
+                    trong cơ sở dữ liệu
                   </p>
                 </div>
               ) : null}

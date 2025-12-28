@@ -12,6 +12,17 @@ export interface Word {
   updated_at?: string;
 }
 
+export interface NhiepEntry {
+  id?: number;
+  phap: string; // Cột A
+  tang: string; // Cột B
+  tanh_tuong?: string; // Cột C
+  phan_loai?: string; // Cột D
+  full_data?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export class DictionaryOperations {
   private db: Database.Database;
 
@@ -204,4 +215,146 @@ export function getDictionaryOperations(): DictionaryOperations {
     instance = new DictionaryOperations();
   }
   return instance;
+}
+
+// ================= NHIẾP =================
+export class NhiepOperations {
+  private db: Database.Database;
+
+  constructor(db?: Database.Database) {
+    this.db = db || getDatabase();
+  }
+
+  search(query: string, limit: number = 30): NhiepEntry[] {
+    const term = `${query}%`;
+    const stmt = this.db.prepare(
+      `SELECT * FROM nhiep
+       WHERE lower(phap) LIKE lower(?)
+          OR lower(tang) LIKE lower(?)
+       ORDER BY phap ASC, tang ASC
+       LIMIT ?`,
+    );
+    return stmt.all(term, term, limit) as NhiepEntry[];
+  }
+
+  add(entry: NhiepEntry): number {
+    const stmt = this.db.prepare(
+      `INSERT INTO nhiep (phap, tang, tanh_tuong, phan_loai, full_data)
+       VALUES (?, ?, ?, ?, ?)`,
+    );
+    const result = stmt.run(
+      entry.phap,
+      entry.tang,
+      entry.tanh_tuong || null,
+      entry.phan_loai || null,
+      entry.full_data || null,
+    );
+    return result.lastInsertRowid as number;
+  }
+
+  update(id: number, entry: Partial<NhiepEntry>): boolean {
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (entry.phap !== undefined) {
+      updates.push('phap = ?');
+      values.push(entry.phap);
+    }
+    if (entry.tang !== undefined) {
+      updates.push('tang = ?');
+      values.push(entry.tang);
+    }
+    if (entry.tanh_tuong !== undefined) {
+      updates.push('tanh_tuong = ?');
+      values.push(entry.tanh_tuong);
+    }
+    if (entry.phan_loai !== undefined) {
+      updates.push('phan_loai = ?');
+      values.push(entry.phan_loai);
+    }
+    if (entry.full_data !== undefined) {
+      updates.push('full_data = ?');
+      values.push(entry.full_data);
+    }
+
+    if (updates.length === 0) return false;
+
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    const stmt = this.db.prepare(
+      `UPDATE nhiep SET ${updates.join(', ')} WHERE id = ?`,
+    );
+    const result = stmt.run(...values);
+    return (result.changes as number) > 0;
+  }
+
+  existsByPhap(phap: string): NhiepEntry | null {
+    const stmt = this.db.prepare(
+      'SELECT * FROM nhiep WHERE lower(phap) = lower(?) LIMIT 1',
+    );
+    return (stmt.get(phap) as NhiepEntry) || null;
+  }
+
+  existsByTang(tang: string): NhiepEntry | null {
+    const stmt = this.db.prepare(
+      'SELECT * FROM nhiep WHERE lower(tang) = lower(?) LIMIT 1',
+    );
+    return (stmt.get(tang) as NhiepEntry) || null;
+  }
+
+  deleteAll(): number {
+    const stmt = this.db.prepare('DELETE FROM nhiep');
+    const result = stmt.run();
+    return result.changes as number;
+  }
+
+  import(entries: NhiepEntry[], replace: boolean = false) {
+    const transaction = this.db.transaction(() => {
+      let added = 0;
+      let updated = 0;
+
+      if (replace) {
+        this.deleteAll();
+      }
+
+      const seen = new Set<string>();
+      const uniqueEntries = entries.filter((e) => {
+        const key = e.phap.toLowerCase().trim();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      for (const entry of uniqueEntries) {
+        const existing =
+          this.existsByPhap(entry.phap) || this.existsByTang(entry.tang);
+        if (existing && !replace) {
+          this.update(existing.id!, entry);
+          updated++;
+        } else {
+          this.add(entry);
+          added++;
+        }
+      }
+
+      return {added, updated};
+    });
+
+    return transaction();
+  }
+
+  stats() {
+    const countStmt = this.db.prepare('SELECT COUNT(*) as count FROM nhiep');
+    const count = (countStmt.get() as {count: number}).count;
+    return {total: count};
+  }
+}
+
+let nhiepInstance: NhiepOperations | null = null;
+export function getNhiepOperations(): NhiepOperations {
+  if (!nhiepInstance) {
+    nhiepInstance = new NhiepOperations();
+  }
+  return nhiepInstance;
 }
