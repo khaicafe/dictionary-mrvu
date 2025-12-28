@@ -208,3 +208,6 @@ rm -rf .next
 set nvm default
 nvm use 20
 nvm alias default 20
+
+api trên host error fix
+sshpass -p "\_GHKpxi#Gmp4E8elT34o" ssh -p 24700 root@103.56.162.100 "chown -R 1001:1001 /root/dictionary-mrvu/data && ls -la /root/dictionary-mrvu/data"
