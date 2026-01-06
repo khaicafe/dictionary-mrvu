@@ -58,9 +58,42 @@ function formatTibetanText(text: string | undefined | null) {
 
       const tibetanRegex = /([\u0F00-\u0FFF]+)/g;
 
-      // Render text with Tibetan highlighting
+      // Render text with Tibetan on separate line if mixed with Vietnamese
       const renderTextWithTibetan = (txt: string) => {
         const parts = txt.split(tibetanRegex);
+        const hasTibetan = parts.some((p) => tibetanRegex.test(p));
+        const hasVietnamese = parts.some(
+          (p) => !tibetanRegex.test(p) && p.trim().length > 0,
+        );
+
+        // If mixed content, separate Vietnamese and Tibetan
+        if (hasTibetan && hasVietnamese) {
+          const vietnameseParts: string[] = [];
+          const tibetanParts: string[] = [];
+
+          parts.forEach((part) => {
+            if (tibetanRegex.test(part)) {
+              tibetanParts.push(part);
+            } else if (part.trim()) {
+              vietnameseParts.push(part);
+            }
+          });
+
+          return (
+            <>
+              {vietnameseParts.length > 0 && (
+                <div className="block">{vietnameseParts.join(' ')}</div>
+              )}
+              {tibetanParts.length > 0 && (
+                <div className="block font-bold text-[1.15em]">
+                  {tibetanParts.join(' ')}
+                </div>
+              )}
+            </>
+          );
+        }
+
+        // No mixing, render inline with highlighting
         return parts.map((part, idx) => {
           if (tibetanRegex.test(part)) {
             return (
@@ -94,7 +127,39 @@ function formatTibetanText(text: string | undefined | null) {
   // No numbered list, just format Tibetan text normally
   const tibetanRegex = /([\u0F00-\u0FFF]+)/g;
   const parts = text.split(tibetanRegex);
+  const hasTibetan = parts.some((p) => tibetanRegex.test(p));
+  const hasVietnamese = parts.some(
+    (p) => !tibetanRegex.test(p) && p.trim().length > 0,
+  );
 
+  // If mixed content, separate Vietnamese and Tibetan
+  if (hasTibetan && hasVietnamese) {
+    const vietnameseParts: string[] = [];
+    const tibetanParts: string[] = [];
+
+    parts.forEach((part) => {
+      if (tibetanRegex.test(part)) {
+        tibetanParts.push(part);
+      } else if (part.trim()) {
+        vietnameseParts.push(part);
+      }
+    });
+
+    return (
+      <>
+        {vietnameseParts.length > 0 && (
+          <div className="block">{vietnameseParts.join(' ')}</div>
+        )}
+        {tibetanParts.length > 0 && (
+          <div className="block font-bold text-[1.15em]">
+            {tibetanParts.join(' ')}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // No mixing, render inline with highlighting
   return (
     <>
       {parts.map((part, idx) => {
