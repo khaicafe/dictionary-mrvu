@@ -23,14 +23,81 @@ interface NhiepEntry {
 function formatTibetanText(text: string | undefined | null) {
   if (!text) return '—';
 
-  // Tibetan Unicode range: \u0F00-\u0FFF
+  // Check if text contains "1." to start numbered list formatting
+  const hasNumberedList = /1\.\s/.test(text);
+
+  if (hasNumberedList) {
+    // Find the position of "1."
+    const match = text.match(/1\.\s/);
+    if (match && match.index !== undefined) {
+      const beforeList = text.substring(0, match.index);
+      const fromList = text.substring(match.index);
+
+      // Split the list part by number patterns but keep content together
+      const listItems: {number: string; content: string}[] = [];
+      const regex = /(\d+\.\s)/g;
+      let lastIndex = 0;
+      let match2;
+
+      while ((match2 = regex.exec(fromList)) !== null) {
+        if (lastIndex > 0) {
+          // Save previous item's content
+          const prevContent = fromList.substring(lastIndex, match2.index);
+          if (listItems.length > 0) {
+            listItems[listItems.length - 1].content = prevContent;
+          }
+        }
+        listItems.push({number: match2[0], content: ''});
+        lastIndex = match2.index + match2[0].length;
+      }
+
+      // Add content for the last item
+      if (listItems.length > 0 && lastIndex < fromList.length) {
+        listItems[listItems.length - 1].content = fromList.substring(lastIndex);
+      }
+
+      const tibetanRegex = /([\u0F00-\u0FFF]+)/g;
+
+      // Render text with Tibetan highlighting
+      const renderTextWithTibetan = (txt: string) => {
+        const parts = txt.split(tibetanRegex);
+        return parts.map((part, idx) => {
+          if (tibetanRegex.test(part)) {
+            return (
+              <span key={idx} className="font-bold text-[1.15em]">
+                {part}
+              </span>
+            );
+          }
+          return <span key={idx}>{part}</span>;
+        });
+      };
+
+      return (
+        <>
+          {beforeList && <span>{renderTextWithTibetan(beforeList)}</span>}
+          {listItems.map((item, idx) => (
+            <div key={idx} className="block mt-2">
+              <span className="font-bold text-purple-700">
+                {item.number.trim()}{' '}
+              </span>
+              <span className="inline">
+                {renderTextWithTibetan(item.content)}
+              </span>
+            </div>
+          ))}
+        </>
+      );
+    }
+  }
+
+  // No numbered list, just format Tibetan text normally
   const tibetanRegex = /([\u0F00-\u0FFF]+)/g;
   const parts = text.split(tibetanRegex);
 
   return (
     <>
       {parts.map((part, idx) => {
-        // Check if this part is Tibetan
         if (tibetanRegex.test(part)) {
           return (
             <span key={idx} className="font-bold text-[1.15em]">
@@ -229,7 +296,9 @@ export default function DictionarySearch() {
                 backgroundColor: '#ffffff',
                 caretColor: '#000000',
               }}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base font-mono font-semibold placeholder-gray-400"
+              className={`w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base font-semibold placeholder-gray-400 ${
+                activeSource === 'dictionary' ? 'font-mono' : ''
+              }`}
             />
             {loading && (
               <div className="absolute right-3 top-3">
@@ -442,7 +511,7 @@ export default function DictionarySearch() {
                         <div className="text-xl text-purple-800 font-semibold break-words">
                           {item.tang || '—'}
                         </div>
-                        <div className="text-lg text-gray-700 line-clamp-2 break-words">
+                        <div className="text-lg text-gray-700 break-words">
                           {formatTibetanText(item.tanh_tuong)}
                         </div>
                         <div className="text-lg text-gray-700 break-words">
